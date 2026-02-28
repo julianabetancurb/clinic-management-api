@@ -48,4 +48,21 @@ export class PacientesService {
     await this.findOne(id);
     return this.prisma.paciente.delete({ where: { id } });
   }
+  async getCitasByPaciente(id: string) {
+  const paciente = await this.prisma.paciente.findUnique({
+    where: { id },
+  });
+
+  if (!paciente) {
+    throw new NotFoundException('Paciente no encontrado.');
+  }
+
+  return this.prisma.cita.findMany({
+    where: { pacienteId: id },
+    orderBy: { fechaInicio: 'asc' },
+    include: {
+      doctor: true,
+    },
+  });
+}
 }
