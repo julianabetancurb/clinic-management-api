@@ -40,4 +40,10 @@ export class PacientesController {
   remove(@Param('id') id: string) {
     return this.pacientesService.remove(id);
   }
+  
+  @Get(':id/citas')
+  @ApiOperation({ summary: 'Obtener citas de un paciente' })
+  getCitas(@Param('id') id: string) {
+    return this.pacientesService.getCitasByPaciente(id);
+}
 }
