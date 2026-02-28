@@ -40,4 +40,10 @@ export class DoctoresController {
   remove(@Param('id') id: string) {
     return this.doctoresService.remove(id);
   }
+
+  @Get(':id/citas')
+  @ApiOperation({ summary: 'Obtener citas de un doctor' })
+  getCitas(@Param('id') id: string) {
+    return this.doctoresService.getCitasByDoctor(id);
+  }
 }
