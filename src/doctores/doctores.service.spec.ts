@@ -9,6 +9,7 @@ describe('DoctoresService', () => {
 
   beforeEach(async () => {
     Object.values(prismaMock.doctor).forEach((fn) => fn.mockReset());
+    Object.values(prismaMock.cita).forEach((fn) => fn.mockReset());
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -20,6 +21,7 @@ describe('DoctoresService', () => {
     service = module.get<DoctoresService>(DoctoresService);
   });
 
+  // ── findAll ──────────────────────────────────────────────────────────────
   it('findAll should return doctores list', async () => {
     prismaMock.doctor.findMany.mockResolvedValue([{ id: '1' }]);
 
@@ -29,13 +31,23 @@ describe('DoctoresService', () => {
     expect(prismaMock.doctor.findMany).toHaveBeenCalledTimes(1);
   });
 
+  // ── findOne ───────────────────────────────────────────────────────────────
+  it('findOne should return doctor if exists', async () => {
+    prismaMock.doctor.findUnique.mockResolvedValue({ id: 'd1' });
+
+    const result = await service.findOne('d1');
+
+    expect(result).toEqual({ id: 'd1' });
+  });
+
   it('findOne should throw NotFoundException if doctor does not exist', async () => {
     prismaMock.doctor.findUnique.mockResolvedValue(null);
 
     await expect(service.findOne('nope')).rejects.toBeInstanceOf(NotFoundException);
   });
 
-  it('create should create doctor', async () => {
+  // ── create ────────────────────────────────────────────────────────────────
+  it('create should create doctor successfully', async () => {
     prismaMock.doctor.create.mockResolvedValue({ id: '1', documento: '90001' });
 
     const result = await service.create({
@@ -63,19 +75,84 @@ describe('DoctoresService', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  it('create should rethrow unknown errors', async () => {
+    const unknownError = new Error('DB connection error');
+    prismaMock.doctor.create.mockRejectedValue(unknownError);
+
+    await expect(
+      service.create({ documento: '1', nombres: 'X', apellidos: 'Y', especialidad: 'Z' } as any),
+    ).rejects.toThrow('DB connection error');
+  });
+
+  // ── update ────────────────────────────────────────────────────────────────
+  it('update should update doctor successfully', async () => {
+    prismaMock.doctor.findUnique.mockResolvedValue({ id: 'd1' });
+    prismaMock.doctor.update.mockResolvedValue({ id: 'd1', especialidad: 'Cardiología' });
+
+    const result = await service.update('d1', { especialidad: 'Cardiología' });
+
+    expect(prismaMock.doctor.update).toHaveBeenCalledWith({
+      where: { id: 'd1' },
+      data: { especialidad: 'Cardiología' },
+    });
+    expect(result).toEqual({ id: 'd1', especialidad: 'Cardiología' });
+  });
+
   it('update should throw NotFoundException if doctor does not exist', async () => {
     prismaMock.doctor.findUnique.mockResolvedValue(null);
 
-    await expect(service.update('id', { especialidad: 'Nueva' })).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.update('nope', { especialidad: 'Nueva' })).rejects.toBeInstanceOf(NotFoundException);
   });
 
+  it('update should throw BadRequestException on P2002 during update', async () => {
+    prismaMock.doctor.findUnique.mockResolvedValue({ id: 'd1' });
+    prismaMock.doctor.update.mockRejectedValue({ code: 'P2002' });
+
+    await expect(service.update('d1', { documento: 'duplicado' })).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('update should rethrow unknown errors during update', async () => {
+    prismaMock.doctor.findUnique.mockResolvedValue({ id: 'd1' });
+    prismaMock.doctor.update.mockRejectedValue(new Error('DB error'));
+
+    await expect(service.update('d1', { especialidad: 'X' })).rejects.toThrow('DB error');
+  });
+
+  // ── remove ────────────────────────────────────────────────────────────────
   it('remove should delete doctor', async () => {
-    prismaMock.doctor.findUnique.mockResolvedValue({ id: '1' });
-    prismaMock.doctor.delete.mockResolvedValue({ id: '1' });
+    prismaMock.doctor.findUnique.mockResolvedValue({ id: 'd1' });
+    prismaMock.doctor.delete.mockResolvedValue({ id: 'd1' });
 
-    const result = await service.remove('1');
+    const result = await service.remove('d1');
 
-    expect(prismaMock.doctor.delete).toHaveBeenCalledWith({ where: { id: '1' } });
-    expect(result).toEqual({ id: '1' });
+    expect(prismaMock.doctor.delete).toHaveBeenCalledWith({ where: { id: 'd1' } });
+    expect(result).toEqual({ id: 'd1' });
+  });
+
+  it('remove should throw NotFoundException if doctor does not exist', async () => {
+    prismaMock.doctor.findUnique.mockResolvedValue(null);
+
+    await expect(service.remove('nope')).rejects.toBeInstanceOf(NotFoundException);
+  });
+
+  // ── getCitasByDoctor ──────────────────────────────────────────────────────
+  it('getCitasByDoctor should return citas of doctor', async () => {
+    prismaMock.doctor.findUnique.mockResolvedValue({ id: 'd1' });
+    prismaMock.cita.findMany.mockResolvedValue([{ id: 'c1', doctorId: 'd1' }]);
+
+    const result = await service.getCitasByDoctor('d1');
+
+    expect(prismaMock.cita.findMany).toHaveBeenCalledWith({
+      where: { doctorId: 'd1' },
+      orderBy: { fechaInicio: 'asc' },
+      include: { paciente: true },
+    });
+    expect(result).toEqual([{ id: 'c1', doctorId: 'd1' }]);
+  });
+
+  it('getCitasByDoctor should throw NotFoundException if doctor does not exist', async () => {
+    prismaMock.doctor.findUnique.mockResolvedValue(null);
+
+    await expect(service.getCitasByDoctor('nope')).rejects.toBeInstanceOf(NotFoundException);
   });
 });
