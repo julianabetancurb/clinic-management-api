@@ -15,30 +15,24 @@ jobs:
       DATABASE_URL: ${{ secrets.DATABASE_URL_PRODUCCION }}
 
     steps:
-      # 1. Checkout del código
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Configurar Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
 
-      # 3. Instalar dependencias
       - name: Install dependencies
         run: npm ci
 
-      # 4. Generar cliente de Prisma
       - name: Generate Prisma client
         run: npx prisma generate
 
-      # 5. Ejecutar pruebas con cobertura
       - name: Run tests with coverage
         run: npm run test:cov -- --forceExit
 
-      # 6. Validar cobertura mínima (quality gate: ≥85%)
       - name: Check coverage threshold (≥85%)
         run: |
           LINES=$(cat coverage/coverage-summary.json | node -e "
@@ -56,7 +50,6 @@ jobs:
             console.log('✅ Coverage OK: ' + pct + '%');
           "
 
-      # 7. Deploy a Render (solo en push, no en PR)
       - name: Deploy to Render (Producción)
         if: github.event_name == 'push'
         run: |
