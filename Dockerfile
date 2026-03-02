@@ -48,4 +48,4 @@ RUN ls -la dist/
 EXPOSE 3000
 
 # Comando para arrancar
-CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main"]
+CMD ["node", "dist/src/main"]
