@@ -86,6 +86,7 @@
     "!prisma/prisma.mock.ts"
   ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "coverageReporters": ["text", "lcov", "json-summary"]
   }
 }
