@@ -57,25 +57,6 @@ jobs:
           "
 
       # 7. Deploy a Render (solo en push, no en PR)
-      - name: 🚀 Deploy to Render (Pruebas)
+      - name: Deploy to Render (Pruebas)
         if: github.event_name == 'push'
-        env:
-          RENDER_API_KEY: ${{ secrets.RENDER_API_KEY }}
-          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID_PRUEBAS }}
-        run: |
-          HTTP_CODE=$(curl -s -o /tmp/render_response.json -w "%{http_code}" \
-            -X POST \
-            "https://api.render.com/v1/services/${RENDER_SERVICE_ID}/deploys" \
-            -H "Authorization: Bearer ${RENDER_API_KEY}" \
-            -H "Content-Type: application/json" \
-            -d '{"clearCache": false}')
-
-          echo "HTTP status: $HTTP_CODE"
-          cat /tmp/render_response.json
-
-          if [ "$HTTP_CODE" != "201" ]; then
-            echo "❌ Error al iniciar deploy en Render (HTTP $HTTP_CODE)"
-            exit 1
-          fi
-
-          echo "✅ Deploy iniciado correctamente en ambiente de Pruebas"
+        run: curl "${{ secrets.RENDER_DEPLOY_HOOK_PRUEBAS }}"
