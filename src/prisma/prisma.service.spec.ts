@@ -5,7 +5,6 @@ jest.mock('@prisma/adapter-pg', () => ({
 }));
 
 jest.mock('@prisma/client', () => {
-  // Clase que simula PrismaClient con los métodos que usa PrismaService
   class MockPrismaClient {
     $connect = jest.fn().mockResolvedValue(undefined);
     $disconnect = jest.fn().mockResolvedValue(undefined);
