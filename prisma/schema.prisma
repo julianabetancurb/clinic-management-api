@@ -1,0 +1,57 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Paciente {
+  id        String   @id @default(uuid())
+  documento String   @unique
+  nombres   String
+  apellidos String
+  telefono  String?
+  email     String?
+  citas     Cita[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Doctor {
+  id             String   @id @default(uuid())
+  documento       String  @unique
+  nombres         String
+  apellidos       String
+  especialidad    String
+  duracionCitaMin Int     @default(30)
+  citas           Cita[]
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+enum EstadoCita {
+  PROGRAMADA
+  CANCELADA
+  COMPLETADA
+  NO_ASISTIO
+}
+
+model Cita {
+  id          String     @id @default(uuid())
+  pacienteId  String
+  doctorId    String
+  fechaInicio DateTime
+  fechaFin    DateTime
+  estado      EstadoCita @default(PROGRAMADA)
+  motivo      String?
+
+  paciente    Paciente   @relation(fields: [pacienteId], references: [id])
+  doctor      Doctor     @relation(fields: [doctorId], references: [id])
+
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([doctorId, fechaInicio, fechaFin])
+  @@index([pacienteId, fechaInicio])
+}
