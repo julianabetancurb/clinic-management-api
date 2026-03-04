@@ -75,6 +75,8 @@ Representa a un paciente de la clínica.
 
 ### Cita
 Representa una cita médica entre un paciente y un doctor.
+
+
 ---
 ## 🗄️ Modelo de base de datos
 
