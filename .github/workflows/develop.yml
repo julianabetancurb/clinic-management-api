@@ -1,0 +1,60 @@
+name: CI/CD - Pruebas (develop)
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+
+jobs:
+  test-and-deploy:
+    name: Build, Test & Deploy to Pruebas
+    runs-on: ubuntu-latest
+
+    env:
+      DATABASE_URL: ${{ secrets.DATABASE_URL_PRUEBAS }}
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+
+      - name: Install dependencies
+        run: npm ci
+
+
+      - name: Generate Prisma client
+        run: npx prisma generate
+
+
+      - name: Run tests with coverage
+        run: npm run test:cov -- --forceExit
+
+
+      - name: Check coverage threshold (≥60%)
+        run: |
+          LINES=$(cat coverage/coverage-summary.json | node -e "
+            const fs = require('fs');
+            const data = JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8'));
+            console.log(data.total.lines.pct);
+          ")
+          echo "Coverage de líneas: $LINES%"
+          node -e "
+            const pct = $LINES;
+            if (pct < 60) {
+              console.error('❌ Coverage insuficiente: ' + pct + '% (mínimo 60%)');
+              process.exit(1);
+            }
+            console.log('✅ Coverage OK: ' + pct + '%');
+          "
+
+      - name: Deploy to Render (Pruebas)
+        if: github.event_name == 'push'
+        run: curl "${{ secrets.RENDER_DEPLOY_HOOK_PRUEBAS }}"
