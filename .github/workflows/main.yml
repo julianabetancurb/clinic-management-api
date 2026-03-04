@@ -1,4 +1,4 @@
-name: CI/CD - Producción (main)
+name: CI/CD - Produccion (main)
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     branches: [main]
 
 jobs:
-  test-and-deploy:
-    name: Build, Test & Deploy to Producción
+  build-test-deploy:
+    name: Build, Test & Deploy to Produccion
     runs-on: ubuntu-latest
 
     env:
@@ -18,7 +18,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js 20
         uses: actions/setup-node@v4
         with:
           node-version: '20'
@@ -31,31 +31,21 @@ jobs:
         run: npx prisma generate
 
       - name: Run tests with coverage
-        run: npm run test:cov -- --forceExit
+        run: npm run test:cov -- --forceExit --ci
 
-      - name: Check coverage threshold (≥85%)
+      - name: Check coverage threshold (>=85%)
         run: |
-          LINES=$(cat coverage/coverage-summary.json | node -e "
-            const fs = require('fs');
-            const data = JSON.parse(require('fs').readFileSync('/dev/stdin', 'utf8'));
-            console.log(data.total.lines.pct);
-          ")
-          echo "Coverage de líneas: $LINES%"
           node -e "
-            const pct = $LINES;
-            if (pct < 85) {
-              console.error('❌ Coverage insuficiente: ' + pct + '% (mínimo 85% para producción)');
+            const summary = require('./coverage/coverage-summary.json');
+            const lines = summary.total.lines.pct;
+            console.log('Lines coverage: ' + lines + '%');
+            if (lines < 85) {
+              console.error('Coverage insuficiente: ' + lines + '% (minimo 85%)');
               process.exit(1);
             }
-            console.log('✅ Coverage OK: ' + pct + '%');
+            console.log('Quality gate aprobado: ' + lines + '% >= 85%');
           "
 
-      - name: Deploy to Render (Producción)
+      - name: Deploy to Render (Produccion)
         if: github.event_name == 'push'
-        run: |
-          curl -s -X POST \
-            "https://api.render.com/v1/services/${{ secrets.RENDER_SERVICE_ID_PRODUCCION }}/deploys" \
-            -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-            -H "Content-Type: application/json" \
-            -d '{"clearCache": false}' \
-            | grep -q '"id"' && echo "✅ Deploy iniciado en Render (Producción)" || (echo "❌ Error al iniciar deploy" && exit 1)
+        run: curl "${{ secrets.RENDER_DEPLOY_HOOK_PRODUCCION }}"
