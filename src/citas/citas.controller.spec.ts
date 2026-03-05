@@ -29,7 +29,10 @@ describe('CitasController', () => {
   });
 
   it('should be defined', () => {
+      //fail('test fallido a propósito');
+
     expect(controller).toBeDefined();
+ 
   });
 
   describe('create', () => {
