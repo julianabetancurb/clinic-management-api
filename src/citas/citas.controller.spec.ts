@@ -29,9 +29,9 @@ describe('CitasController', () => {
   });
 
   it('should be defined', () => {
-      fail('test fallido a propósito');
+      //fail('test fallido a propósito');
 
-    //expect(controller).toBeDefined();
+    expect(controller).toBeDefined();
  
   });
 
