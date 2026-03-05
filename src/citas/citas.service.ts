@@ -26,13 +26,11 @@ export class CitasService {
     if (!doctor) throw new NotFoundException('Doctor no encontrado.');
   }
 
-  // Opcional pro: evitar solapamiento de citas del mismo doctor
   private async ensureNoOverlap(doctorId: string, fechaInicio: Date, fechaFin: Date, excludeId?: string) {
     const overlap = await this.prisma.cita.findFirst({
       where: {
         doctorId,
         ...(excludeId ? { NOT: { id: excludeId } } : {}),
-        // overlap if start < existingEnd AND end > existingStart
         fechaInicio: { lt: fechaFin },
         fechaFin: { gt: fechaInicio },
       },
