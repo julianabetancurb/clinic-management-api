@@ -53,7 +53,3 @@ jobs:
             }
             console.log('Quality gate aprobado: ' + avg.toFixed(2) + '% >= 85%');
           "
-
-      - name: Deploy to Render (Produccion)
-        if: github.event_name == 'push'
-        run: curl "${{ secrets.RENDER_DEPLOY_HOOK_PRODUCCION }}"
