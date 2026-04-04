@@ -37,13 +37,21 @@ jobs:
         run: |
           node -e "
             const summary = require('./coverage/coverage-summary.json');
-            const lines = summary.total.lines.pct;
-            console.log('Lines coverage: ' + lines + '%');
-            if (lines < 85) {
-              console.error('Coverage insuficiente: ' + lines + '% (minimo 85%)');
+            const s = summary.total.statements.pct;
+            const b = summary.total.branches.pct;
+            const f = summary.total.functions.pct;
+            const l = summary.total.lines.pct;
+            const avg = (s + b + f + l) / 4;
+            console.log('Statements: ' + s + '%');
+            console.log('Branches:   ' + b + '%');
+            console.log('Functions:  ' + f + '%');
+            console.log('Lines:      ' + l + '%');
+            console.log('Promedio:   ' + avg.toFixed(2) + '%');
+            if (avg < 100) {
+              console.error('Coverage insuficiente: ' + avg.toFixed(2) + '% (minimo 85%)');
               process.exit(1);
             }
-            console.log('Quality gate aprobado: ' + lines + '% >= 85%');
+            console.log('Quality gate aprobado: ' + avg.toFixed(2) + '% >= 85%');
           "
 
       - name: Deploy to Render (Produccion)
