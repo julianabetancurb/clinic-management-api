@@ -1,37 +1,35 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsInt, IsString, IsOptional, Length, Min, ValidateNested } from 'class-validator';
-import { JsonDirectorDto } from './json-director.dto';
+import { IsInt, IsOptional, IsString, Length, Min } from 'class-validator';
 
 export class ProcesoDoctorDto {
-  @ApiProperty({ example: '987654321' })
+  @ApiProperty({ example: 'Juan Fernando', description: 'Nombre del director' })
+  @IsString()
+  @Length(2, 60)
+  name!: string;
+
+  @ApiProperty({ example: '987654321', description: 'Documento del doctor' })
   @IsString()
   @Length(5, 30)
-  documento: string;
+  documento!: string;
 
   @ApiProperty({ example: 'Ana' })
   @IsString()
   @Length(2, 60)
-  nombres: string;
+  nombres!: string;
 
   @ApiProperty({ example: 'Gómez' })
   @IsString()
   @Length(2, 60)
-  apellidos: string;
+  apellidos!: string;
 
   @ApiProperty({ example: 'Medicina General' })
   @IsString()
   @Length(2, 80)
-  especialidad: string;
+  especialidad!: string;
 
   @ApiProperty({ example: 30, required: false })
   @IsOptional()
   @IsInt()
   @Min(5)
   duracionCitaMinutos?: number;
-
-  @ApiProperty({ type: JsonDirectorDto })
-  @ValidateNested()
-  @Type(() => JsonDirectorDto)
-  jsonDirector: JsonDirectorDto;
 }
