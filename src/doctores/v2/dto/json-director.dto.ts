@@ -5,5 +5,5 @@ export class JsonDirectorDto {
   @ApiProperty({ example: 'Carlos López' })
   @IsString()
   @Length(2, 60)
-  nombre: string;
+  nombre!: string;
 }

@@ -1,7 +1,6 @@
 import {
   Injectable,
   BadGatewayException,
-  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -15,46 +14,36 @@ export class DoctoresV2Service {
   constructor(private readonly prisma: PrismaService) {}
 
   async procesarMensaje(dto: ProcesoDoctorDto) {
-    let doctor;
+    const doctor = await this.prisma.doctor.create({
+      data: {
+        documento: dto.documento,
+        nombres: dto.nombres,
+        apellidos: dto.apellidos,
+        especialidad: dto.especialidad,
+        duracionCitaMin: dto.duracionCitaMinutos ?? 30,
+      },
+    });
 
-    try {
-      doctor = await this.prisma.doctor.create({
-        data: {
-          documento: dto.documento,
-          nombres: dto.nombres,
-          apellidos: dto.apellidos,
-          especialidad: dto.especialidad,
-          duracionCitaMin: dto.duracionCitaMinutos ?? 30,
-        },
-      });
-    } catch (err: any) {
-      if (err?.code === 'P2002') {
-        throw new BadRequestException(
-          'Ya existe un doctor con ese documento.',
-        );
-      }
-
-      this.logger.error('Error al crear el doctor en base de datos', err);
-      throw new BadRequestException('Error al crear el doctor.');
-    }
 
     const payload = {
-      documento: doctor.documento,
-      nombres: doctor.nombres,
-      apellidos: doctor.apellidos,
-      especialidad: doctor.especialidad,
-      duracionCitaMinutos: doctor.duracionCitaMin,
-      jsonDirector: dto.jsonDirector,
+      name: dto.name,
+      jsonDoctor: {
+        documento: doctor.documento,
+        nombres: doctor.nombres,
+        apellidos: doctor.apellidos,
+        especialidad: doctor.especialidad,
+        duracionCitaMinutos: doctor.duracionCitaMin,
+      },
     };
 
     if (this.siguienteApiUrl) {
       return await this.llamarSiguienteApi(payload);
     }
 
+
     this.logger.warn(
       'SIGUIENTE_API_URL no configurada. Retornando respuesta local.',
     );
-
     return payload;
   }
 
@@ -77,11 +66,7 @@ export class DoctoresV2Service {
 
       return await response.json();
     } catch (err: any) {
-      if (err instanceof BadGatewayException) {
-        throw err;
-      }
-
-      this.logger.error('Error al llamar al siguiente microservicio', err);
+      if (err instanceof BadGatewayException) throw err;
       throw new BadGatewayException(
         `No se pudo contactar al siguiente microservicio: ${err.message}`,
       );
