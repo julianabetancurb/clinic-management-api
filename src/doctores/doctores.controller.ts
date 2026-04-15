@@ -1,4 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+} from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { DoctoresService } from './doctores.service';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
@@ -29,10 +37,11 @@ export class DoctoresController {
     return this.doctoresService.findOne(id);
   }
 
-  @Patch(':id')
-  @ApiOperation({ summary: 'Actualizar doctor (parcial)' })
-  update(@Param('id') id: string, @Body() dto: UpdateDoctorDto) {
-    return this.doctoresService.update(id, dto);
+  @Patch(':documento')
+  @ApiOperation({ summary: 'Actualizar doctor por documento (parcial)' })
+  @ApiParam({ name: 'documento', example: '987654321' })
+  update(@Param('documento') documento: string, @Body() dto: UpdateDoctorDto) {
+    return this.doctoresService.updateByDocumento(documento, dto);
   }
 
   @Delete(':id')

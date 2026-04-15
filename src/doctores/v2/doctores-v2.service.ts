@@ -1,10 +1,15 @@
 import {
   Injectable,
   BadGatewayException,
+  BadRequestException,
   Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ProcesoDoctorDto } from './dto/proceso-doctor.dto';
+
+type DatosDoctorNuevo = Required<
+  Pick<ProcesoDoctorDto, 'nombres' | 'apellidos' | 'especialidad'>
+>;
 
 @Injectable()
 export class DoctoresV2Service {
@@ -14,16 +19,16 @@ export class DoctoresV2Service {
   constructor(private readonly prisma: PrismaService) {}
 
   async procesarMensaje(dto: ProcesoDoctorDto) {
-    const doctor = await this.prisma.doctor.create({
-      data: {
-        documento: dto.documento,
-        nombres: dto.nombres,
-        apellidos: dto.apellidos,
-        especialidad: dto.especialidad,
-        duracionCitaMin: dto.duracionCitaMinutos ?? 30,
-      },
+    const doctorExistente = await this.prisma.doctor.findUnique({
+      where: { documento: dto.documento },
     });
 
+    let doctor = doctorExistente;
+
+    if (!doctor) {
+      this.validarDatosDoctorNuevo(dto);
+      doctor = await this.crearDoctor(dto);
+    }
 
     const payload = {
       name: dto.name,
@@ -40,11 +45,40 @@ export class DoctoresV2Service {
       return await this.llamarSiguienteApi(payload);
     }
 
-
     this.logger.warn(
       'SIGUIENTE_API_URL no configurada. Retornando respuesta local.',
     );
     return payload;
+  }
+
+  private validarDatosDoctorNuevo(
+    dto: ProcesoDoctorDto,
+  ): asserts dto is ProcesoDoctorDto & DatosDoctorNuevo {
+    const camposFaltantes = [
+      ['nombres', dto.nombres],
+      ['apellidos', dto.apellidos],
+      ['especialidad', dto.especialidad],
+    ]
+      .filter(([, valor]) => !valor?.trim())
+      .map(([campo]) => campo);
+
+    if (camposFaltantes.length > 0) {
+      throw new BadRequestException(
+        `Para crear un doctor nuevo debe enviar: ${camposFaltantes.join(', ')}.`,
+      );
+    }
+  }
+
+  private crearDoctor(dto: ProcesoDoctorDto & DatosDoctorNuevo) {
+    return this.prisma.doctor.create({
+      data: {
+        documento: dto.documento,
+        nombres: dto.nombres,
+        apellidos: dto.apellidos,
+        especialidad: dto.especialidad,
+        duracionCitaMin: dto.duracionCitaMinutos ?? 30,
+      },
+    });
   }
 
   private async llamarSiguienteApi(body: Record<string, any>) {
