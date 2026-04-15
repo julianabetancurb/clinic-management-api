@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
@@ -28,13 +32,18 @@ export class DoctoresService {
     return doctor;
   }
 
-  async update(id: string, dto: UpdateDoctorDto) {
-    await this.findOne(id);
+  async updateByDocumento(documento: string, dto: UpdateDoctorDto) {
     try {
-      return await this.prisma.doctor.update({ where: { id }, data: dto });
+      return await this.prisma.doctor.update({
+        where: { documento },
+        data: dto,
+      });
     } catch (err: any) {
+      if (err?.code === 'P2025') {
+        throw new NotFoundException('No existe un doctor con ese documento.');
+      }
       if (err?.code === 'P2002') {
-        throw new BadRequestException('Documento ya está en uso por otro doctor.');
+        throw new BadRequestException('Ya existe un doctor con ese documento.');
       }
       throw err;
     }
@@ -46,21 +55,20 @@ export class DoctoresService {
   }
 
   async getCitasByDoctor(id: string) {
-  const doctor = await this.prisma.doctor.findUnique({
-    where: { id },
-  });
+    const doctor = await this.prisma.doctor.findUnique({
+      where: { id },
+    });
 
-  if (!doctor) {
-    throw new NotFoundException('Doctor no encontrado.');
+    if (!doctor) {
+      throw new NotFoundException('Doctor no encontrado.');
+    }
+
+    return this.prisma.cita.findMany({
+      where: { doctorId: id },
+      orderBy: { fechaInicio: 'asc' },
+      include: {
+        paciente: true,
+      },
+    });
   }
-
-  return this.prisma.cita.findMany({
-    where: { doctorId: id },
-    orderBy: { fechaInicio: 'asc' },
-    include: {
-      paciente: true,
-    },
-  });
-}
-
 }

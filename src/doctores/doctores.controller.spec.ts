@@ -6,7 +6,7 @@ const mockDoctoresService = {
   create: jest.fn(),
   findAll: jest.fn(),
   findOne: jest.fn(),
-  update: jest.fn(),
+  updateByDocumento: jest.fn(),
   remove: jest.fn(),
   getCitasByDoctor: jest.fn(),
 };
@@ -68,20 +68,24 @@ describe('DoctoresController', () => {
     });
 
     it('should propagate NotFoundException from service', async () => {
-      mockDoctoresService.findOne.mockRejectedValue(new Error('Doctor no encontrado.'));
+      mockDoctoresService.findOne.mockRejectedValue(
+        new Error('Doctor no encontrado.'),
+      );
 
-      await expect(controller.findOne('nope')).rejects.toThrow('Doctor no encontrado.');
+      await expect(controller.findOne('nope')).rejects.toThrow(
+        'Doctor no encontrado.',
+      );
     });
   });
 
   describe('update', () => {
-    it('should call service.update and return result', async () => {
-      const dto = { especialidad: 'Cardiología' };
-      const result = { id: 'd1', ...dto };
-      mockDoctoresService.update.mockResolvedValue(result);
+    it('should call service.updateByDocumento and return result', async () => {
+      const dto = { especialidad: 'Cardiologia' };
+      const result = { id: 'd1', documento: '90001', ...dto };
+      mockDoctoresService.updateByDocumento.mockResolvedValue(result);
 
-      expect(await controller.update('d1', dto as any)).toBe(result);
-      expect(service.update).toHaveBeenCalledWith('d1', dto);
+      expect(await controller.update('90001', dto as any)).toBe(result);
+      expect(service.updateByDocumento).toHaveBeenCalledWith('90001', dto);
     });
   });
 
@@ -105,9 +109,13 @@ describe('DoctoresController', () => {
     });
 
     it('should propagate NotFoundException if doctor does not exist', async () => {
-      mockDoctoresService.getCitasByDoctor.mockRejectedValue(new Error('Doctor no encontrado.'));
+      mockDoctoresService.getCitasByDoctor.mockRejectedValue(
+        new Error('Doctor no encontrado.'),
+      );
 
-      await expect(controller.getCitas('nope')).rejects.toThrow('Doctor no encontrado.');
+      await expect(controller.getCitas('nope')).rejects.toThrow(
+        'Doctor no encontrado.',
+      );
     });
   });
 });
