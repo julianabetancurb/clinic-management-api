@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsInt, IsOptional, IsString, Length, Min } from 'class-validator';
 
 export class ProcesoDoctorDto {
@@ -12,22 +12,25 @@ export class ProcesoDoctorDto {
   @Length(5, 30)
   documento!: string;
 
-  @ApiProperty({ example: 'Ana' })
+  @ApiPropertyOptional({ example: 'Ana' })
+  @IsOptional()
   @IsString()
   @Length(2, 60)
-  nombres!: string;
+  nombres?: string;
 
-  @ApiProperty({ example: 'Gómez' })
+  @ApiPropertyOptional({ example: 'Gomez' })
+  @IsOptional()
   @IsString()
   @Length(2, 60)
-  apellidos!: string;
+  apellidos?: string;
 
-  @ApiProperty({ example: 'Medicina General' })
+  @ApiPropertyOptional({ example: 'Medicina General' })
+  @IsOptional()
   @IsString()
   @Length(2, 80)
-  especialidad!: string;
+  especialidad?: string;
 
-  @ApiProperty({ example: 30, required: false })
+  @ApiPropertyOptional({ example: 30 })
   @IsOptional()
   @IsInt()
   @Min(5)
