@@ -236,5 +236,6 @@ GET /api/v2/metrics
 
 ### Arquitectura 
 
+<img width="1162" height="721" alt="Untitled Diagram drawio" src="https://github.com/user-attachments/assets/412dce28-9a2f-4f22-9171-0c8b39ee00d9" />
 
 
