@@ -4,19 +4,19 @@ import { IsDateString, IsOptional, IsString, IsUUID, Length } from 'class-valida
 export class CreateCitaDto {
   @ApiProperty({ example: 'uuid-paciente' })
   @IsUUID()
-  pacienteId: string;
+  pacienteId!: string;
 
   @ApiProperty({ example: 'uuid-doctor' })
   @IsUUID()
-  doctorId: string;
+  doctorId!: string;
 
   @ApiProperty({ example: '2026-03-01T10:00:00.000Z' })
   @IsDateString()
-  fechaInicio: string;
+  fechaInicio!: string;
 
   @ApiProperty({ example: '2026-03-01T10:30:00.000Z' })
   @IsDateString()
-  fechaFin: string;
+  fechaFin!: string;
 
   @ApiProperty({ example: 'Consulta general', required: false })
   @IsOptional()
