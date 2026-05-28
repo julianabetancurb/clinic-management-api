@@ -213,30 +213,32 @@ Se dispara en cada push o PR a la rama `main`.
 6. Quality gate: cobertura mínima >= 85%
 7. Deploy automático a Render (ambiente Producción)
 ```
----
-# Dosctores V2
-Microservicio desarrollado en NestJS como parte de una arquitectura distribuida multicloud.  
-Esta versión (V2) introduce un flujo de integración entre microservicios, despliegue en GCP y mejoras en observabilidad.
-Usando:
-- **Google Cloud Platform (GCP)**:
-  - Cloud Run
-  - Cloud Build
-  - Artifact Registry
-  - Cloud SQL
-  - Cloud Logging
 
-### Endpoint principal 
-POST /api/v2/doctores/proceso
+### Reglas de aprobación obligatorias
+- Si **cualquier prueba falla** el pipeline se detiene y **no despliega**
+- Si el **coverage es menor al mínimo** el pipeline se detiene y **no despliega**
+- Solo se despliega cuando **0 pruebas con errores** y **coverage suficiente**
 
-### Monitoreo
-GET /api/v2/metrics/summary
-GET /api/v2/metrics
+### Secrets requeridos en GitHub
+
+| Secret | Descripción |
+|--------|-------------|
+| `DATABASE_URL_PRUEBAS` | URL de BD Supabase para pruebas |
+| `DATABASE_URL_PRODUCCION` | URL de BD Supabase para producción |
+| `RENDER_DEPLOY_HOOK_PRUEBAS` | Deploy hook de Render para pruebas |
+| `RENDER_DEPLOY_HOOK_PRODUCCION` | Deploy hook de Render para producción |
 
 ---
 
-### Arquitectura 
+## 🌿 Estrategia de ramas
 
-<img width="1162" height="721" alt="Untitled Diagram drawio" src="https://github.com/user-attachments/assets/412dce28-9a2f-4f22-9171-0c8b39ee00d9" />
+| Rama | Propósito | Pipeline | Cobertura mínima |
+|------|-----------|----------|-----------------|
+| `develop` | Desarrollo y pruebas | `develop.yml` | >= 60% |
+| `main` | Producción | `main.yml` | >= 85% |
+| `feature/*` | Nuevas funcionalidades | — | — |
 
+El flujo de trabajo es: `feature/* → develop → main`
 
 ---
+
