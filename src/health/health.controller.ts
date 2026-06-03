@@ -5,10 +5,11 @@ export class HealthController {
   @Get()
   getHealth() {
     return {
-      status: process.env.RELEASE_STATUS || 'stable',
-      version: process.env.APP_VERSION || '4.0.0',
+      status: 'canary',
+      version: '1.1.0-canary',
+      deploymentDate: '2026-06-03',
       service: 'clinic-management-api',
-      deploymentDate: process.env.DEPLOYMENT_DATE || '2026-05-28',
+      visibleChange: 'Canary version with visible change',
     };
   }
 }
