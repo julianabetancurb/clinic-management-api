@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: clinic-api-service
+  annotations:
+    cloud.google.com/backend-config: '{"default": "clinic-api-backend-config"}'
+spec:
+  selector:
+    app: clinic-api
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
+  type: NodePort

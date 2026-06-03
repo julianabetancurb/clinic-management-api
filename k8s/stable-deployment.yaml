@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clinic-api-stable
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: clinic-api
+      version: stable
+  template:
+    metadata:
+      labels:
+        app: clinic-api
+        version: stable
+    spec:
+      containers:
+        - name: clinic-api
+          image: us-central1-docker.pkg.dev/clinic-management-canary/clinic-repo/clinic-management-api:stable
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          env:
+            - name: RELEASE_STATUS
+              value: "stable"
+            - name: APP_VERSION
+              value: "1.0.0"
+            - name: DEPLOYMENT_DATE
+              value: "2026-06-03"
+            - name: NODE_ENV
+              value: "production"
+            - name: DATABASE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: clinic-api-secrets
+                  key: DATABASE_URL
