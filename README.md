@@ -1,244 +1,154 @@
-# 🏥 Clinic Management API
+# Clinic Management API — Canary Deployment
 
-API RESTful para la gestión de una clínica médica. Permite administrar doctores, pacientes y citas médicas con validaciones de negocio, dos ambientes independientes (pruebas y producción) y pipelines CI/CD automatizados.
+## Estrategia de Redirección de Tráfico
 
----
+### Implementación
 
-## 🚀 Ambientes desplegados
+Se uso **Kubernetes en Google Kubernetes Engine (GKE)** con los siguientes componentes:
 
-| Ambiente | URL | Rama | Documentación |
-|----------|-----|------|---------------|
-| **Pruebas** | https://clinic-api-pruebas.onrender.com | `develop` | https://clinic-api-pruebas.onrender.com/docs |
-| **Producción** | https://clinic-api-produccion.onrender.com | `main` | https://clinic-api-produccion.onrender.com/docs |
+| Componente | Recurso | Descripción |
+|---|---|---|
+| Deployment estable | `clinic-api-stable` | Versión productiva con 3 réplicas |
+| Deployment canary | `clinic-api-canary` | Nueva versión con 1 réplica |
+| Servicio común | `clinic-api-service` | Balancea tráfico entre ambos deployments |
+| Ingress | `clinic-api-ingress` | Punto de entrada único con health checks configurados |
+| BackendConfig | `clinic-api-backend-config` | Configura el health check en `/api/health` puerto 3000 |
 
-> **Nota:** Todos los endpoints requieren el prefijo `/api`. Ejemplo: `https://clinic-api-pruebas.onrender.com/api/pacientes`
+### Distribución del tráfico
 
----
-
-## 🏛️ Arquitectura
-
-La aplicación sigue una **arquitectura modular en capas (Layered Modular Architecture)**, que es el patrón estándar de NestJS. Cada entidad está encapsulada en su propio módulo con capas bien definidas y separadas.
-
-### Capas
-
-| Capa | Responsabilidad | Archivos |
-|------|----------------|---------|
-| **Presentación** | Recibe y responde peticiones HTTP | `*.controller.ts` |
-| **Negocio** | Validaciones y reglas de negocio | `*.service.ts` |
-| **Datos** | Acceso a la base de datos | `prisma.service.ts` |
-
-### Patrones utilizados
-
-- **DTO (Data Transfer Object)** — valida y tipifica los datos de entrada en cada endpoint
-- **Repository Pattern** — Prisma abstrae el acceso a la base de datos
-- **Dependency Injection** — NestJS inyecta servicios en controllers automáticamente
-- **Modular Architecture** — cada entidad (Doctor, Paciente, Cita) es un módulo independiente
-
-### Flujo de una petición
-
+El control de tráfico se logra mediante el numero de replicas. 
 ```
-HTTP Request
-     ↓
-Controller        ← valida entrada con DTO
-     ↓
-Service           ← aplica reglas de negocio
-     ↓
-PrismaService     ← ejecuta query en la BD
-     ↓
-PostgreSQL (Supabase)
-     ↓
-HTTP Response
+Stable  (3 réplicas) →  75% del tráfico
+Canary  (1 réplica)  →  25% del tráfico
 ```
 
 ---
 
-## 🛠️ Tecnologías
+## Validación con Postman
 
-- **Framework:** NestJS + TypeScript
-- **ORM:** Prisma con driver adapter para PostgreSQL
-- **Base de datos:** PostgreSQL (Supabase)
-- **Contenedores:** Docker + Docker Compose
-- **CI/CD:** GitHub Actions
-- **Deploy:** Render
-- **Tests:** Jest
-- **Documentación:** Swagger
+**Base URL:** `http://34.117.53.178`
 
----
+### Health Check
 
-## 📦 Entidades
+Endpoint principal para observar la estrategia de redirección. Al enviarse múltiples veces, la respuesta alterna entre la versión stable y canary según el split configurado.
 
-### Doctor
-Representa a un médico de la clínica.
+| Campo | Valor |
+|---|---|
+| Método | `GET` |
+| URL | `http://34.117.53.178/api/health` |
 
-### Paciente
-Representa a un paciente de la clínica.
-
-### Cita
-Representa una cita médica entre un paciente y un doctor.
-
-
----
-## 🗄️ Modelo de base de datos
-
-![Modelo de base de datos](docs/db-model.png)
-
-## 📡 Endpoints
-
-Todos los endpoints tienen el prefijo `/api`. La documentación interactiva está disponible en `/docs`.
-
-### Doctores `/api/doctores`
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `POST` | `/api/doctores` | Crear un doctor |
-| `GET` | `/api/doctores` | Listar todos los doctores |
-| `GET` | `/api/doctores/:id` | Obtener un doctor por ID |
-| `PATCH` | `/api/doctores/:id` | Actualizar un doctor |
-| `DELETE` | `/api/doctores/:id` | Eliminar un doctor |
-| `GET` | `/api/doctores/:id/citas` | Obtener citas de un doctor |
-
-### Pacientes `/api/pacientes`
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `POST` | `/api/pacientes` | Crear un paciente |
-| `GET` | `/api/pacientes` | Listar todos los pacientes |
-| `GET` | `/api/pacientes/:id` | Obtener un paciente por ID |
-| `PATCH` | `/api/pacientes/:id` | Actualizar un paciente |
-| `DELETE` | `/api/pacientes/:id` | Eliminar un paciente |
-| `GET` | `/api/pacientes/:id/citas` | Obtener citas de un paciente |
-
-### Citas `/api/citas`
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| `POST` | `/api/citas` | Crear una cita |
-| `GET` | `/api/citas` | Listar todas las citas |
-| `GET` | `/api/citas/:id` | Obtener una cita por ID |
-| `PATCH` | `/api/citas/:id` | Actualizar una cita (reprogramar / cambiar motivo) |
-| `PATCH` | `/api/citas/:id/estado` | Actualizar el estado de una cita |
-| `DELETE` | `/api/citas/:id` | Eliminar una cita |
-
----
-
-## 🐳 Correr localmente con Docker
-
-### Prerequisitos
-- Docker Desktop instalado y corriendo
-- Archivo `.env` configurado
-
-### Variables de entorno
-
-Crea un archivo `.env` en la raíz del proyecto:
-
-```env
-DATABASE_URL=postgresql://postgres:password@localhost:5432/clinic_db
-PORT=3000
+**Respuesta — versión Stable:**
+```json
+{
+  "status": "stable",
+  "version": "1.0.0",
+  "deploymentDate": "2026-06-03",
+  "service": "clinic-management-api",
+  "environment": "production",
+  "visibleChange": "Stable production version"
+}
 ```
 
-### Levantar con Docker Compose
+**Respuesta — versión Canary:**
+```json
+{
+  "status": "canary",
+  "version": "canary",
+  "deploymentDate": "2026-06-03",
+  "service": "clinic-management-api",
+  "environment": "production",
+  "visibleChange": "Canary version - new feature"
+}
+```
+
+### Nuevos endpoints disponibles
+
+| Método | URL | Descripción |
+|---|---|---|
+| `GET` | `http://34.117.53.178/api/health` | Health check con información de versión |
+
+y las que ya estaban predeterminadas al inicio del proyecto
+---
+
+## Monitoreo de la Estrategia de Redirección
+
+### Opción 1 — Terminal
+
+Ejecutar múltiples requests consecutivas para observar la alternancia entre versiones:
 
 ```bash
-# Levantar app + base de datos
-docker-compose up
-
-# En segundo plano
-docker-compose up -d
-
-# Ver logs
-docker-compose logs -f
-
-# Detener
-docker-compose down
+for i in {1..20}; do
+  curl -s http://34.117.53.178/api/health | grep -E "status|version"
+  echo "---"
+done
 ```
 
-### Correr migraciones (primera vez)
+El resultado muestra cuántas respuestas corresponden a `stable` vs `canary`, validando el split 75/25.
+
+### Opción 2 — kubectl (estado de pods y logs)
 
 ```bash
-npx prisma migrate deploy
+# Ver pods activos de ambos deployments
+kubectl get pods -l app=clinic-api -o wide
+
+# Logs en tiempo real del deployment canary
+kubectl logs -l app=clinic-api-canary -f
+
+# Logs en tiempo real del deployment stable
+kubectl logs -l app=clinic-api-stable -f
 ```
 
-La app estará disponible en `http://localhost:3000/api` y la documentación en `http://localhost:3000/docs`.
-
----
-
-## 🧪 Tests y cobertura
-
-### Correr los tests
+### Opción 3 — Estado del Ingress y backends en GCP
 
 ```bash
-# Todos los tests
-npm run test
+# Estado de salud de los backends registrados en el Ingress
+kubectl describe ingress clinic-api-ingress
 
-# Con coverage
-npm run test:cov
-
-# Modo watch
-npm run test:watch
+# Health de cada endpoint en el Load Balancer de GCP
+gcloud compute backend-services get-health \
+  $(gcloud compute backend-services list --format='value(name)' | grep clinic) \
+  --global
 ```
 
-### Estructura de tests
-- **Servicios:** pruebas unitarias con mock de Prisma (`prisma.mock.ts`)
-- **Controllers:** pruebas unitarias con mock de servicios
-- **Total:** 76 pruebas
+### Opción 4 — Google Cloud Console
+
+1. Navegar a **GCP Console → Kubernetes Engine → Workloads**
+   - Se visualizan `clinic-api-stable` y `clinic-api-canary` como deployments independientes con sus réplicas activas.
+
+2. Navegar a **Network Services → Load Balancing**
+   - Se muestra el estado de los backends (HEALTHY/UNHEALTHY) y el health check configurado.
+
+3. Navegar a **Monitoring → Metrics Explorer**
+   - Usar la métrica `kubernetes.io/container/request_count` filtrando por pod para graficar la distribución real del tráfico entre ambas versiones.
 
 ---
 
-## ⚙️ Pipelines CI/CD
-
-El proyecto usa **GitHub Actions** con 2 pipelines independientes.
-
-### Pipeline de Pruebas (`develop.yml`)
-Se dispara en cada push o PR a la rama `develop`.
+## Estructura del Proyecto
 
 ```
-1. Checkout del código
-2. Setup Node.js 20
-3. Instalación de dependencias (npm ci)
-4. Generación del cliente Prisma
-5. Ejecución de pruebas con coverage
-6. Quality gate: cobertura mínima >= 60%
-7. Deploy automático a Render (ambiente Pruebas)
+clinic-management-api/
+├── k8s/
+│   ├── stable-deployment.yaml   # Deployment versión stable (3 réplicas)
+│   ├── canary-deployment.yaml   # Deployment versión canary (1 réplica)
+│   ├── service.yaml             # Servicio común para ambos deployments
+│   └── ingress.yaml             # Ingress con rutas /api y /health
+├── backend-config.yaml          # Configuración del health check para GCP Load Balancer
+└── README.md
 ```
 
-### Pipeline de Producción (`main.yml`)
-Se dispara en cada push o PR a la rama `main`.
+## Comandos de Despliegue
 
+```bash
+# Aplicar manifests en orden
+kubectl apply -f k8s/stable-deployment.yaml
+kubectl apply -f k8s/canary-deployment.yaml
+kubectl apply -f k8s/service.yaml
+kubectl apply -f backend-config.yaml
+kubectl apply -f k8s/ingress.yaml
+
+# Verificar el estado del cluster
+kubectl get deployments
+kubectl get pods -o wide
+kubectl get svc
+kubectl get ingress
 ```
-1. Checkout del código
-2. Setup Node.js 20
-3. Instalación de dependencias (npm ci)
-4. Generación del cliente Prisma
-5. Ejecución de pruebas con coverage
-6. Quality gate: cobertura mínima >= 85%
-7. Deploy automático a Render (ambiente Producción)
-```
-
-### Reglas de aprobación obligatorias
-- Si **cualquier prueba falla** el pipeline se detiene y **no despliega**
-- Si el **coverage es menor al mínimo** el pipeline se detiene y **no despliega**
-- Solo se despliega cuando **0 pruebas con errores** y **coverage suficiente**
-
-### Secrets requeridos en GitHub
-
-| Secret | Descripción |
-|--------|-------------|
-| `DATABASE_URL_PRUEBAS` | URL de BD Supabase para pruebas |
-| `DATABASE_URL_PRODUCCION` | URL de BD Supabase para producción |
-| `RENDER_DEPLOY_HOOK_PRUEBAS` | Deploy hook de Render para pruebas |
-| `RENDER_DEPLOY_HOOK_PRODUCCION` | Deploy hook de Render para producción |
-
----
-
-## 🌿 Estrategia de ramas
-
-| Rama | Propósito | Pipeline | Cobertura mínima |
-|------|-----------|----------|-----------------|
-| `develop` | Desarrollo y pruebas | `develop.yml` | >= 60% |
-| `main` | Producción | `main.yml` | >= 85% |
-| `feature/*` | Nuevas funcionalidades | — | — |
-
-El flujo de trabajo es: `feature/* → develop → main`
-
----
-
