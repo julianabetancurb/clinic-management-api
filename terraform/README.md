@@ -49,7 +49,7 @@ terraform init
 
 ### 3. Construir y subir la imagen Docker
 
-Antes de aplicar, necesitas tener la imagen en Artifact Registry:
+Antes de aplicar, se necesita tener la imagen en Artifact Registry:
 
 ```bash
 # Configurar Docker para GCP
@@ -65,11 +65,11 @@ docker push us-central1-docker.pkg.dev/clinic-api-devops/clinic-api/clinic-api:l
 ### 4. Crear archivo terraform.tfvars
 
 ```hcl
-project_id        = "clinic-api-devops"
+project_id        = ""
 region            = "us-central1"
-db_password       = "clinic123"
-database_url      = "postgresql://clinic_user:clinic123@<IP_CLOUD_SQL>:5432/clinic_db"
-siguiente_api_url = "http://34.45.249.45:3000/api/v2/directors"
+db_password       = ""
+database_url      = ""
+
 ```
 
 > **Nota:** La IP de Cloud SQL la obtienes después de correr `terraform apply` por primera vez con solo el módulo de Cloud SQL.
